@@ -1,0 +1,23 @@
+<configure
+  xmlns="http://namespaces.zope.org/zope"
+  xmlns:browser="http://namespaces.zope.org/browser"
+  i18n_domain="leam.luc">
+
+  <include package="plone.app.registry" />
+  <include package="plone.app.contentmenu" />
+
+  <browser:page
+    name="luc-model-settings"
+    for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+    class=".controlpanel.LUCSettingsControlPanel"
+    permission="cmf.ManagePortal"
+    />
+
+  <browser:page
+    for="*"
+    name="pop_queue"
+    class=".queue.PopQueue"
+    permission="zope2.View"
+    />
+
+</configure>

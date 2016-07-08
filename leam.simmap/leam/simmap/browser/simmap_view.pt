@@ -1,0 +1,71 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n" lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="leam.simmap">
+<head>
+  <!-- not sure why this was set but it was causing the action bar to
+       be hidden.
+  <metal:block fill-slot="top_slot"
+    tal:define="dummy python:request.set('disable_border',0);
+                portal_state context/@@plone_portal_state;
+                portal_url portal_state/portal_url" />
+  -->
+
+    <metal:block metal:fill-slot="javascript_head_slot">
+
+      <link rel="stylesheet" href="++resource++ol_theme/default/style.tidy.css" type="text/css" />
+
+      <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?v=3.6&sensor=false"></script>
+      <script type="text/javascript" src="++resource++openlayers.js"> </script>
+      <script type="text/javascript" src="++resource++simmap.js"> </script>
+
+      <script type="text/javascript">
+          jQuery(document).ready(simmap.init);
+      </script>
+
+  </metal:block>
+
+</head>
+
+<body>
+    <div metal:fill-slot="main">
+      <tal:main-macro metal:define-macro="main">
+
+    <div tal:replace="structure provider:plone.abovecontenttitle" />
+
+    <h1 tal:content="context/title_or_id" class="documentFirstHeading">
+      Title
+    </h1>
+
+    <div tal:replace="structure provider:plone.belowcontenttitle" />
+    <div tal:replace="structure provider:plone.abovecontentbody" />
+
+    <div id="map" class="olMap" style="width:100%;height: 500px;">
+                <!-- openlayers map -->
+    </div>
+
+    <div id="simmaps" style="display:none">
+      <div class="map-url" tal:repeat="map view/maps" tal:content="map">
+         <!-- URL -->
+      </div>
+    </div>
+
+    <p class="simmapDownload">
+      <a href="download" tal:attributes="href string:${context/absolute_url}/at_download/simImage">download</a>
+    </p>
+
+    <p class="documentDescription">
+      <metal:field use-macro="python:here.widget('details', mode='view')"/>
+    </p>
+
+
+    </tal:main-macro>
+
+    <div tal:replace="structure provider:plone.belowcontentbody" />
+
+    </div>
+
+</body>
+</html>

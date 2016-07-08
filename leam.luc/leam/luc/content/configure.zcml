@@ -1,0 +1,28 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    i18n_domain="leam.luc">
+
+  <!-- configure your content components here -->
+  
+  <!-- -*- extra stuff goes here -*- -->
+  <class class=".projection.Projection">
+    <require
+        permission="zope2.View"
+        interface="..interfaces.IProjection"
+        />
+  </class>
+  <class class=".probmap.Probmap">
+    <require
+        permission="zope2.View"
+        interface="..interfaces.IProbmap"
+        />
+  </class>
+  <class class=".lucscenario.LUCScenario">
+    <require
+        permission="zope2.View"
+        interface="..interfaces.ILUCScenario"
+        />
+  </class>
+
+</configure>

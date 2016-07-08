@@ -1,0 +1,54 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="leam.simmap">
+
+  <include package="plone.app.contentmenu" />
+  <include package="plone.app.portlets" />
+  <include package="plone.app.registry" />
+
+    <browser:page
+        name="simmap-settings"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".controlpanel.SimMapSettingsControlPanel"
+        permission="cmf.ManagePortal"
+        />
+
+    <browser:page
+        name="simmap_view"
+        for="*"
+        class=".simmap_view.SimMapView"
+        template="simmap_view.pt"
+        permission="zope2.View"
+        />
+
+    <browser:resourceDirectory
+        name="ol_images"
+        directory="images"
+        permission="zope2.View"
+        />
+
+    <browser:resourceDirectory
+        name="ol_theme"
+        directory="theme"
+        permission="zope2.View"
+        />
+
+    <browser:resource
+        name="simmap.js"
+        file="simmap.js"
+        />
+
+    <browser:resource
+        name="openlayers.js"
+        file="openlayers.js"
+        />
+
+    <plone:portletRenderer
+        portlet="plone.app.portlets.portlets.navigation.INavigationPortlet"
+        layer="..interfaces.ISimMap"
+        class=".nav.SimMapNavRenderer"
+        />
+
+</configure>

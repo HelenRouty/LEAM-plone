@@ -1,0 +1,66 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="leam.taz">
+<body>
+
+<tal:comment tal:condition="nothing">
+    This is a sample view template. It will not be used for rendering the
+    content unless activated by creation of a view class with a matching name.
+</tal:comment>
+
+<metal:main fill-slot="content-core">
+  <metal:content-core define-macro="content-core">
+
+    <div tal:condition="python:context.runstatus=='pending'" >
+      <p>The TAZ analysis is PENDING.  This is the correct status if
+         the TAZ analysis is part of post-processing on future scenarios.
+         But if you intended to the analysis to be performed immediately
+         you should ensure a scenario as been selected.  Use "edit" to 
+         modify the TAZ analysis parameters.
+      </p>
+    </div>
+
+    <div tal:condition="python:context.runstatus=='queued'" >
+      <p>The TAZ analysis has been QUEUED and will be run in the near future.
+         Check the <a href="#" tal:attributes="href string:${context/scenario/to_object/absolute_url}">scenario folder</a> for the results.
+      </p>
+    </div>
+
+    <div tal:condition="python:context.runstatus not in ('pending', 'queued')">
+      <p>The TAZ analysis should be completed.
+        <span tal:condition="context/scenario">Look for a folder titled 
+         "<span tal:replace="context/title">title</span>" in the  
+         <a href="#" tal:attributes="href string:${context/scenario/to_object/absolute_url}">scenario folder</a> for the results.
+       </span>
+      </p>
+    </div>
+
+    <div class="dexerity-fields">
+      <div>
+        <h3 tal:content="structure view/w/layer/label">Label</h3>
+        <div tal:content="structure view/w/layer/render">value</div>
+      </div>
+      <div>
+        <h3 tal:content="structure view/w/baseyear/label">Label</h3>
+        <div tal:content="structure view/w/baseyear/render">value</div>
+      </div>
+      <div>
+        <h3 tal:content="structure view/w/years/label">Label</h3>
+        <div tal:content="structure view/w/years/render">value</div>
+      </div>
+      <div tal:condition="context/scenario">
+        <h3 tal:content="structure view/w/scenario/label">Label</h3>
+        <div tal:content="structure view/w/scenario/render">value</div>
+      </div>
+    </div>
+
+  </metal:content-core>
+</metal:main>
+
+</body>
+</html>
+
