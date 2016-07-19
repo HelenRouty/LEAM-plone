@@ -1,3 +1,5 @@
+LEAM composition
+================
 **LEAM has four essential parts.**
 
 1. The probability map computation using the driver set input maps.
@@ -21,3 +23,26 @@
    * The core function is leampoll.py and supervisor software.
    * The codes are cloned from the LEAMgroup github page's job monitor.
    * Clear leampoll installation/run/stop instructions are written in this folder.
+
+LEAM Installation
+=================
+** Note that the instructions below are copied from LEAMgroup github LEAM folder **
+
+1. Install development environment (compilers, mpi, git, various python modules, etc) since we'll need to be able to compile things. I don't have a canonical list of dependancies.
+
+  * `sudo apt-get update` 
+  * `sudo apt-get install build-essential autoconf automake git`
+  * `sudo apt-get install python-dev python-pip python-gdal` 
+  * `sudo pip install requests`
+
+2. Install GIS tools. Primarily GRASS and GDAL, you'll need the development environment too. Looks like the most recent Ubuntu support them as packages which will make things easier.
+
+  * `sudo apt-get install grass grass-doc grass-dev`
+
+3. Clone GRASS modules from the grass-modules repository. There are some script modules and some that need to be compiled with GRASS environment. Then these need to be installed or placed in the path.
+
+4. Clone GLUC from the gluc repository, build, and copy the binary to `/usr/local/bin`. It will need to have an MPI compiler installed to build it.
+
+5. Clone LEAM from the leam repository. A this stage you should be able to run the LEAM model using the sample configuration file provided. This configuration will pull the required data from LEAMgroup servers and run a simple scenario. Results will be stored locally as part of the GRASS mapset rather being pushed back to LEAMgroup.
+
+6. (optional) If the LEAM model will be run automatically using the LEAMgroup Planning Portal front-end then clone the job monitor from for the job-monitory repository and install it.
