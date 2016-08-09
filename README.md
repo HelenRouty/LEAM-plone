@@ -6,7 +6,7 @@ LEAM composition
    * One core function is multicost function in grass.
    * One core function is caculation of centers' attractiveness, and its code is in cities.py that is called by attmap.make.
    * The codes are called from startup.py and exist in attmap.make and probmap.make.
-   * The codes are copies from previous LEAM svn.
+   * The codes can be copies from previous LEAM svn: portal.leam.illinois.edu/svn/chicago.
 
 2. The year change map computation using the projection set inputs with probability maps.  
    * The core function is gluc model in this folder.
