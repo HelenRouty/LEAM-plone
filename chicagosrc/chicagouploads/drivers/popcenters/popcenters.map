@@ -1,0 +1,63 @@
+MAP
+  NAME "VectorMap"
+  SIZE 1000 1000
+  EXTENT -89.764 40.863 -86.380 42.714 
+  UNITS dd
+  IMAGETYPE png
+  PROJECTION
+  "init=epsg:4269"
+  END
+
+  WEB
+    METADATA
+      wms_enable_request "*"
+    END
+  END
+
+  SYMBOL
+    NAME "circle"
+    TYPE ellipse
+    FILLED true
+    POINTS
+      1 1
+    END
+  END
+
+  LAYER
+    NAME "final4"
+    TYPE POINT
+    STATUS DEFAULT
+    DATA "leam.files/chicago_popcenter.shp"
+
+    CLASS
+      NAME "Large"
+      EXPRESSION ([CLASS] > 4 and [CLASS] <= 5)
+      SYMBOL 'circle'
+      SIZE 15
+      COLOR 255 0 0
+    END 
+
+    CLASS
+      NAME "Medium"
+      EXPRESSION ([CLASS] > 2 and [CLASS] <= 4)
+      SYMBOL 'circle'
+      SIZE 10
+      COLOR 0 255 0
+    END 
+
+    CLASS
+      NAME "Small"
+      EXPRESSION ([CLASS] > 0 and [CLASS] <= 2)
+      SYMBOL 'circle'
+      SIZE 5
+      COLOR 0 0 255
+    END 
+
+   
+
+    PROJECTION
+      "init=epsg:26916"
+    END
+  END
+END
+

@@ -1,0 +1,92 @@
+MAP
+  NAME "VectorMap"
+  SIZE 1000 1000
+  EXTENT -89.764 40.863 -86.380 42.714 
+  UNITS dd
+  IMAGETYPE png
+  PROJECTION
+  "init=epsg:4269"
+  END
+
+  WEB
+    METADATA
+      wms_enable_request "*"
+    END
+  END
+
+  LAYER
+    NAME "final4"
+    TYPE POLYGON
+    STATUS DEFAULT
+    DATA %3
+
+    CLASSITEM 'POPDENS'
+
+    CLASS
+      NAME '0'
+      EXPRESSION ( ([POPDENS] >= 0.00000) AND ([EMPDENS] <= 0.00000) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 240 249 232
+       END
+    END
+
+    CLASS
+      NAME '0 - 1.3'
+      EXPRESSION ( ([POPDENS] >= 0.00001) AND ([POPDENS] < 1.3) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 213 238 210
+      END
+    END
+
+    CLASS
+      NAME '1.3 - 2.0'
+      EXPRESSION ( ([POPDENS] >= 1.3) AND ([POPDENS] < 2.0) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 123 204 196
+      END
+    END
+
+    CLASS
+      NAME '2.0 - 3.3'
+      EXPRESSION ( ([POPDENS] >= 2.0) AND ([POPDENS] < 3.3) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 95 183 199
+      END
+    END
+
+    CLASS
+      NAME '3.3 - 6.4'
+      EXPRESSION ( ([POPDENS] >= 3.3) AND ([POPDENS] < 6.4) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 37 133 187
+      END
+    END
+
+    CLASS
+      NAME '6.4 - 141'
+      EXPRESSION ( ([POPDENS] >= 6.4) AND ([POPDENS] < 141) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 8 104 172
+      END
+    END
+
+   
+
+    PROJECTION
+      "init=epsg:26916"
+    END
+  END
+END
+

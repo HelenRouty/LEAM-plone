@@ -1,0 +1,36 @@
+MAP
+  NAME "VectorMap"
+  SIZE 600 400
+  EXTENT 17.243671 58.670919 19.682354 60.281295
+  UNITS  dd
+  IMAGETYPE png
+  PROJECTION
+  "init=epsg:4326"
+  END
+
+  WEB
+    METADATA
+      wms_enable_request "*"
+    END
+  END
+
+  LAYER
+    NAME "final4"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA %3
+
+    CLASS
+      NAME "General Roads"
+      STYLE
+        COLOR 0 0 0
+        WIDTH 2
+      END
+    END
+
+    PROJECTION
+      "init=epsg:3006"
+    END
+  END
+END
+

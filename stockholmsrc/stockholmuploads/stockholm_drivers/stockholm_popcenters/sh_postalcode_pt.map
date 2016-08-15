@@ -1,0 +1,69 @@
+MAP
+  NAME "VectorMap"
+  SIZE 600 400
+  EXTENT 17.243671 58.670919 19.682354 60.281295
+  UNITS  dd
+  IMAGETYPE png
+  PROJECTION
+  "init=epsg:4326"
+  END
+
+  WEB
+    METADATA
+      wms_enable_request "*"
+    END
+  END
+
+  SYMBOL
+    NAME "circle"
+    TYPE ellipse
+    FILLED true
+    POINTS
+      1 1
+    END
+  END
+
+  LAYER
+    NAME "final4"
+    TYPE POINT
+    STATUS DEFAULT
+    DATA %3
+
+    CLASS
+      NAME "X-Large"
+      EXPRESSION ([CLASS] > 19 and [CLASS] <= 20)
+      SYMBOL 'circle'
+      SIZE 20
+      COLOR 255 0 0
+    END 
+
+    CLASS
+      NAME "Large"
+      EXPRESSION ([CLASS] > 15 and [CLASS] <= 19)
+      SYMBOL 'circle'
+      SIZE 15
+      COLOR 255 211 211
+    END 
+
+    CLASS
+      NAME "Medium"
+      EXPRESSION ([CLASS] > 7 and [CLASS] <= 15)
+      SYMBOL 'circle'
+      SIZE 10
+      COLOR 0 255 0
+    END 
+
+    CLASS
+      NAME "Small"
+      EXPRESSION ([CLASS] > 0 and [CLASS] <= 7)
+      SYMBOL 'circle'
+      SIZE 5
+      COLOR 0 0 255
+    END 
+
+    PROJECTION
+      "init=epsg:3006"
+    END
+  END
+END
+

@@ -1,0 +1,92 @@
+MAP
+  NAME "VectorMap"
+  SIZE 1000 1000
+  EXTENT -89.764 40.863 -86.380 42.714 
+  UNITS dd
+  IMAGETYPE png
+  PROJECTION
+  "init=epsg:4269"
+  END
+
+  WEB
+    METADATA
+      wms_enable_request "*"
+    END
+  END
+
+  LAYER
+    NAME "final4"
+    TYPE POLYGON
+    STATUS DEFAULT
+    DATA %3
+
+    CLASSITEM 'EMPDENS'
+
+    CLASS
+      NAME '0'
+      EXPRESSION ( ([EMPDENS] >= 0.00000) AND ([EMPDENS] <= 0.00000) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 240 249 232
+       END
+    END
+
+    CLASS
+      NAME '0 - 2.1'
+      EXPRESSION ( ([EMPDENS] >= 0.00001) AND ([EMPDENS] < 2.1) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 213 238 210
+      END
+    END
+
+    CLASS
+      NAME '2.1 - 2.4'
+      EXPRESSION ( ([EMPDENS] >= 2.1) AND ([EMPDENS] < 2.4) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 123 204 196
+      END
+    END
+
+    CLASS
+      NAME '2.4 - 2.8'
+      EXPRESSION ( ([EMPDENS] >= 2.4) AND ([EMPDENS] < 2.8) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 95 183 199
+      END
+    END
+
+    CLASS
+      NAME '2.8 - 6.3'
+      EXPRESSION ( ([EMPDENS] >= 2.8) AND ([EMPDENS] < 6.3) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 37 133 187
+      END
+    END
+
+    CLASS
+      NAME '6.3 - 7'
+      EXPRESSION ( ([EMPDENS] >= 6.3) AND ([EMPDENS] < 7) )
+      STYLE
+        WIDTH 0.91 
+        OUTLINECOLOR 0 0 0
+        COLOR 8 104 172
+      END
+    END
+
+   
+
+    PROJECTION
+      "init=epsg:26916"
+    END
+  END
+END
+

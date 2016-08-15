@@ -1,0 +1,37 @@
+MAP
+  NAME "VectorMap"
+  SIZE 1000 1000
+  EXTENT -89.764 40.863 -86.380 42.714 
+  UNITS dd
+  IMAGETYPE png
+  PROJECTION
+  "init=epsg:4269"
+  END
+
+  WEB
+    METADATA
+      wms_enable_request "*"
+    END
+  END
+
+  LAYER
+    NAME "final4"
+    TYPE POLYGON
+    STATUS DEFAULT
+    DATA "leam.files/chicago_bigbound.shp"
+
+    CLASS
+      NAME "No Growth"
+      STYLE
+        COLOR 0 0 0
+      END
+    END
+
+   
+
+    PROJECTION
+      "init=epsg:26916"
+    END
+  END
+END
+

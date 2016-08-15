@@ -1,0 +1,101 @@
+MAP
+  NAME "VectorMap"
+  SIZE 1000 1000
+  EXTENT -89.764 40.863 -86.380 42.714 
+  UNITS dd
+  IMAGETYPE png
+  PROJECTION
+  "init=epsg:4269"
+  END
+
+
+  WEB
+    METADATA
+      wms_enable_request "*"
+    END
+  END
+
+  LAYER
+    NAME "final4"
+    TYPE RASTER
+    STATUS DEFAULT
+    DATA %3
+
+    CLASS
+      NAME "Water"
+      EXPRESSION ([pixel] = 11)
+      STYLE
+        COLOR 151 219 242
+      END
+    END
+
+    CLASS
+      NAME "Urban Openspace"
+      EXPRESSION ([pixel] = 85)
+      STYLE
+        COLOR 209 255 115
+      END
+    END
+
+    CLASS
+      NAME "Low Residential"
+      EXPRESSION ([pixel] = 21)
+      STYLE
+        COLOR 255 255 0
+      END
+    END
+
+    CLASS
+      NAME "High Residential"
+      EXPRESSION ([pixel] = 22)
+      STYLE
+        COLOR 255 170 0
+      END
+    END
+
+    CLASS
+      NAME "Commercial"
+      EXPRESSION ([pixel] = 23)
+      STYLE
+        COLOR 255 0 0
+      END
+    END
+
+    CLASS
+      NAME "Highways - High commericial"
+      EXPRESSION ([pixel] = 24)
+      STYLE
+        COLOR 0 0 0
+      END
+    END 
+
+    CLASS
+      NAME "Forest"
+      EXPRESSION ([pixel] >= 41 && [pixel] <= 43)
+      STYLE
+        COLOR 115 178 115
+      END
+    END
+
+    CLASS
+      NAME "Grass Clay and Crops"
+      EXPRESSION ([pixel] >= 52 && [pixel] <= 84 || [pixel] = 31)
+      STYLE
+        COLOR 211 255 190
+      END
+    END
+
+    CLASS
+      NAME "Wetland"
+      EXPRESSION ([pixel] == 91 || [pixel] == 92)
+      STYLE
+        COLOR 205 170 102
+      END
+    END 
+
+    PROJECTION
+      "init=epsg:26916"
+    END
+  END
+END
+
