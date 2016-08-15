@@ -1,0 +1,33 @@
+#!/bin/bash
+
+g.region -p > /dev/null
+if [[ $? != 0 ]]; then
+  echo "Error: not running under GRASS environment"
+  exit 1
+fi
+
+declare url=$1
+
+echo "STARTED: importLU $url"
+
+loc=tmp$$
+
+echo "Import landuse from GIS layer"
+echo "Importing $url to location $loc."
+
+r.in.gdal --overwrite input=$url output=landcover location=$loc
+if [[ $? -gt 0 ]]; then
+    echo "ERROR: problem importing landcover map, job quitiing."
+    exit 1
+fi
+
+r.proj --overwrite input=landcover mapset=PERMANENT location=$loc output=landcoverLocal
+if [[ $? -gt 0 ]]; then
+    echo "ERROR: unable to project landcoverLocal, quiting."
+    exit 1
+fi
+
+rm -rf ${GISDBASE}/$loc
+
+echo "Import of landuse successful."
+exit 0

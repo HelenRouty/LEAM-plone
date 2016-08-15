@@ -1,0 +1,37 @@
+#!/bin/bash
+
+g.region -p > /dev/null
+if [[ $? != 0 ]]; then
+  echo "Error: not running under GRASS environment."
+  exit 1
+fi
+
+if [ $# -eq 0 ]; then
+  echo "Usage: $0 [raster raster ...]"
+  echo "list of raster files to be imported"
+  exit 1
+fi
+
+echo "STARTED: importMergeResults $1"
+
+loc=tmp$$
+
+while [ $# -gt 0 ]
+do
+    echo "importing $1 to location $loc"
+    name=${1%\.*}
+    r.in.gdal input=$1 output=$name location=$loc
+    r.proj --overwrite input=$name mapset=PERMANENT location=$loc output=${name}_merge
+    rm -rf ${GISDBASE}/$loc
+
+    shift
+done
+
+# merge alternate scenario results into current run
+r.mapcalc "change=if(change, change, change_merge)"
+r.mapcalc "summary=if(summary, summary, summary_merge)"
+r.mapcalc "ppcell=if(ppcell, ppcell, ppcell_merge)"
+r.mapcalc "hhcell=if(hhcell, hhcell, hhcell_merge)"
+r.mapcalc "empcell=if(empcell, empcell, empcell_merge)"
+
+echo "importMergeResults completed"

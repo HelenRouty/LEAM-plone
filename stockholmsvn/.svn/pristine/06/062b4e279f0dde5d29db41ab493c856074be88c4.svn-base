@@ -1,0 +1,31 @@
+#!/bin/bash
+
+g.region -p > /dev/null
+if [[ $? != 0 ]]; then
+  echo "Error: not running under GRASS environment."
+  exit 1
+fi
+
+if [ $# -eq 0 ]; then
+  echo "Usage: $0 [raster raster ...]"
+  echo "list of raster files to be imported"
+  exit 1
+fi
+
+echo "STARTED: importStartingResults $1"
+
+loc=tmp$$
+
+while [ $# -gt 0 ]
+do
+    echo "importing $1 to location $loc"
+    name=${1%\.*}
+    r.in.gdal input=$1 output=$name location=$loc
+    r.proj --overwrite input=$name mapset=PERMANENT location=$loc output=${name}_start
+    rm -rf $loc
+
+    shift
+done
+
+
+echo "importStartingResults completed"

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+g.region -p > /dev/null
+if [[ $? != 0 ]]; then
+  echo "Error: not running under GRASS environment."
+  exit 1
+fi
+
+if [ x$1 = x ]; then
+  echo "Usage: $0 shapefile"
+  echo "Shapefile contain polygons defining active area."
+  exit 1
+fi
+
+echo "STARTED: importActiveArea $1"
+
+loc=tmp$$
+echo "importing $1 to location $loc"
+v.in.ogr --overwrite dsn=$1 snap=10 min_area=300 output=aa location=$loc layer=${1/.shp/}
+g.remove vect=active_area
+v.proj input=aa mapset=PERMANENT location=$loc output=active_area
+rm -rf ${GISDBASE}/$loc
+
+echo "converting $1 to raster"
+v.to.rast --overwrite input=active_area output=active_area use=val value=1
+if [[ $? != 0 ]]; then
+  echo "Error: converting active area layer ($1) to raster."
+  exit 1
+fi
+
+r.null active_area null=0
+
+echo "importActiveArea completed"

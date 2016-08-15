@@ -1,0 +1,699 @@
+#############################################################################
+# Last modified: Tue Apr 20 11:25:57 CDT 2004
+#
+# This file is used by the unix make program to create the
+# LEAM landuse evolution input files using grass commands.
+#
+# To use,
+#  Start GRASS and use a mapset that will contain the results
+#  Create a directory named cell in this mapset (if not already there)
+#  Copy this Makefile to that directory
+#  Set the name of the needed input maps (see below)
+#  Set the size of the cities (see below)
+#  Set the attractor weights (see below)
+#  From the cell directory, run make on this file
+#############################################################################
+#  Input Maps and Map Categories
+#  Make sure the input maps use the following categories ...
+#    SMALL_CITY - Location of "small cities"
+#        0 No small city
+#        1 Small city
+#    MED_CITY - Location of "medium cities"
+#        0 No small city
+#        1 Small city
+#    LARGE_CITY - Location of "large cities"
+#        0 No small city
+#        1 Small city
+#    NO_GROWTH - Explicit identification of areas of no growth
+#        0 No restrictions
+#        1 No growth areas
+#    DEM
+#        Categories are meters above sea level
+#    MUNICIPAL_BOUNDARY
+#        City boundaries
+#    STUDY_AREA
+#        0 Outside study area
+#        1 Inside study area
+#    INTERSTATES
+#        0 No road
+#        1 Limited access highway
+#    OTHERROADS
+#        0 No road
+#        2 Federal highway
+#        3 State highway
+#        4 County/neighborhood road
+#        5 (New?) county/neighborhood road
+#        6 Ramps
+#        7 Private road
+#        8 Neighborhood road
+#    LANDCOVER  - NLCD Landcover Map
+#       11 Open water
+#       12 Perennial Ice/Snow
+#       21 Low Intensity Residential
+#       22 High Intensity Residential
+#       23 Commercial/Industrial/Transportation
+#       31 Bare Rock/Sand/Clay
+#       32 Quarries/Strip Mines/Gravel Pits
+#       33 Transitional
+#       41 Deciduous Forest
+#       42 Evergreen Forest
+#       43 Mixed Forest
+#       51 Shrubland
+#       61 Orchards/Vineyards/Other
+#       71 Grasslands/Herbaceous
+#       81 Pastures/Hay
+#       82 Row Crops
+#       83 Small Grains
+#       84 Fallow
+#       85 Urban/Recreational Grasses
+#       91 Woody Wetlands
+#       92 Emergent Herbaceous Wetlands
+#
+#############################################################################
+# Provide names of the input maps (name@mapset)
+GRAPHS=./SFA
+CITIES=cities@leamBase
+NO_GROWTH=noGrowthLocal
+MUNICIPAL_BOUNDARY=mnbnd@leamBase
+STUDY_AREA=county
+
+#
+#############################################################################
+# Set the population average for large, medium, and small cities.  These
+# will be used to create the cities_att map, which combines these
+# populations driving time maps.
+#
+XLPOP=350000
+LARGEPOP=50000
+MEDIUMPOP=10000
+SMALLPOP=5000
+POP2000=1930061
+DENSITY=1.68
+
+#############################################################################
+# Set the employment average for large, medium, and small employers.  These
+# will be used to create the emp_att map, which combines these
+# employment gravity map.
+#
+XLEMP=6898
+LARGEEMP=1000
+MEDIUMEMP=200
+SMALLEMP=7
+
+
+#############################################################################
+# Set the weight of each road type.  These will be used to create the
+# transport_att map, which combines these into a final transportation
+# gravity map.
+#
+W_STATERD=3000
+W_RAMP=1500
+W_INTERSECT=500
+W_COUNTY=10
+W_ROAD=0
+
+#############################################################################
+# Set the multipliers for residential growth drivers.  These are multiplied
+# times their respective 0-1 index maps.  The results are summed and divided
+# by the sum of the multipliers to give an overal 0-1 growth attractor
+# index map.
+# NOTE: DOES NOT MATCH THE GERTNER, ET AL. AND LUC EQUATION
+intersect_prob_MULT=1
+road_prob_MULT=1
+slope_prob_MULT=1
+ramp_prob_MULT=1
+staterd_prob_MULT=1
+forest_prob_MULT=1
+water_prob_MULT=1
+cities_prob_MULT=1
+neighbor_prob_MULT=1
+
+#############################################################################
+#############################################################################
+#############################################################################
+# IDEALLY NO EDITING IS REQUIRED BELOW HERE
+#############################################################################
+#############################################################################
+#############################################################################
+
+#GLUCmaps=landcover cityBuff boundary residential_gluc nogrowth_gluc
+GLUCmaps=landcover boundary residential_gluc nogrowth_gluc
+
+IndexMaps=staterd_prob slope_prob water_prob forest_prob intersect_prob 
+
+AttMaps=landcover boundary staterd_att intersect_att ramp_att county_att road_att transport_att slope_att forest_att water_att emp_att cities_att
+
+OtherMaps=road travelTime30 landcover municipalboundary \
+intersection smallCity mediumCity largeCity xLargeCity dem \
+travelSpeed30 travelTime90 xLargeCityTime largeCityTime mediumCityTime \
+smallCityTime landTravelSpeed30 travelTime developable residential_att \
+futureLanduse xLargeEmpCntrs largeEmpCntrs mediumEmpCntrs smallEmpCntrs \
+xLargeEmpCntrsTime largeEmpCntrsTime mediumEmpCntrsTime smallEmpCntrsTime
+
+LEfiles=$(shell echo ${GLUCmaps} | sed -e 's/ /,/g')
+Otherfiles=$(shell echo ${OtherMaps} | sed -e 's/ /,/g')
+Indexfiles=$(shell echo ${IndexMaps} | sed -e 's/ /,/g')
+
+default:
+	@echo make attmaps - to make attractor maps
+	@echo make probmaps - to make probability maps
+	@echo make clean - to remove temporary maps
+	@echo make veryclean - to remove all maps generated by this makefile
+
+LEmaps: ${GLUCmaps}
+
+indexmaps: ${IndexMaps}
+
+attmaps: ${AttMaps}
+
+probmaps: res_probmap com_probmap
+
+#com_probmap: cities_grav_norm emp_com_score transport_com_score forest_score water_score slope_score
+com_probmap: emp_com_score
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.mapcalc $@='cities_grav_norm*emp_com_score*transport_com_score*forest_score*water_score*slope_score'
+
+com_probmap_score: com_probmap
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.recode input=com_probmap output=$@ rules=${GRAPHS}/ComProb.sfa
+
+res_probmap: com_probmap_score cities_res_score emp_res_score transport_res_score forest_score water_score slope_score
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.mapcalc $@='cities_res_score*emp_res_score*transport_res_score*forest_score*water_score*slope_score*com_probmap_score'
+
+residential_gluc: residential_prob
+	-g.remove $@
+	r.mapcalc residential_gluc='round(100*residential_prob)'
+
+nogrowth_gluc: noGrowth
+	-g.remove $@
+	r.mapcalc nogrowth_gluc='if(noGrowth)'
+
+######################################################################
+######################################################################
+# Fetching the base maps
+######################################################################
+######################################################################
+noGrowthBase:
+	g.copy rast=${NO_GROWTH},$@
+
+mnbndBase:
+	g.copy rast=${MUNICIPAL_BOUNDARY},$@
+
+studyAreaBase:
+	g.copy rast=${STUDY_AREA},$@
+
+
+######################################################################
+######################################################################
+# Processing the base maps
+######################################################################
+######################################################################
+
+# Fetch the cities vector map and convert to raster
+# NOTE: currently depends on otherroads vector layer.  Otherroads
+# is created by the importTE script -- this dependancy is not
+# explicit in the makefile.
+cities: popcentersBase
+	@echo '#########################'; echo $@ ; date 
+	-g.remove vect=$@ rast=$@
+	#g.region res=30
+	v.distance -p from=citiesBase to=otherroads upload=to_x,to_y \
+	  column=newx,newy | v.in.ascii output=$@ skip=1 cat=1 x=2 y=3
+	db.copy from_table=popcentersBase to_table=$@
+	v.db.connect map=$@ table=$@
+	v.to.rast input=$@ output=$@ use=cat
+
+# Fetches a map of the locations of the small cities
+smallEmpCntrs: 
+	@echo '#########################'; echo $@ ; date 
+	-g.remove rast=$@,empX vect=$@
+	#g.region res=30
+	v.extract input=empcentersBase output=$@ where='total_emp<=7'
+	v.to.rast input=$@ output=$@ use=val value=1
+	r.buffer $@ out=empX dist=90
+	r.null empX setnull=0
+	r.mapcalc 'smallEmpCntrs=if(isnull(empX),null(),1)' > /dev/null 2>&1
+	-g.remove empX
+
+# Fetches a map of the locations of the medium cities
+mediumEmpCntrs: 
+	@echo '#########################'; echo $@ ; date 
+	-g.remove rast=$@,empX vect=$@
+	#g.region res=30
+	v.extract input=empcentersBase output=$@ where='total_emp>7 and total_emp<=200'
+	v.to.rast input=$@ output=$@ use=val value=1
+	r.buffer $@ out=empX dist=180
+	r.null empX setnull=0
+	r.mapcalc 'mediumEmpCntrs=if(isnull(empX),null(),1)' > /dev/null 2>&1
+	-g.remove empX
+
+# Fetches a map of the locations of the large cities
+largeEmpCntrs: 
+	@echo '#########################'; echo $@ ; date 
+	-g.remove rast=$@,empX vect=$@
+	#g.region res=30
+	v.extract input=empcentersBase output=$@ where='total_emp>200 and total_emp<=1000'
+	v.to.rast input=$@ output=$@ use=val value=1
+	r.buffer $@ out=empX dist=180
+	r.null empX setnull=0
+	r.mapcalc 'largeEmpCntrs=if(isnull(empX),null(),1)' > /dev/null 2>&1
+	-g.remove empX
+
+# Fetches a map of the locations of the xl cities
+xLargeEmpCntrs:
+	@echo '#########################'; echo $@ ; date 
+	-g.remove rast=$@,empX vect=$@
+	#g.region res=30
+	v.extract input=empcentersBase output=$@ where='total_emp>1000'
+	v.to.rast input=$@ output=$@ use=val value=1
+	r.buffer $@ out=empX dist=180
+	r.null empX setnull=0
+	r.mapcalc 'xLargeEmpCntrs=if(isnull(empX),null(),1)' > /dev/null 2>&1
+	-g.remove empX
+
+# Fetches a map of no growth areas.
+# Should be replaced with fetching maps of various no growth areas that can be 
+# edited and then merged.
+noGrowth:  noGrowthBase
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.mapcalc 'noGrowth=if(round(noGrowthBase))' > /dev/null 2>&1
+	r.null noGrowth null=0
+	(echo 1 100 0 0 ; \
+	echo end ; ) | \
+	r.colors noGrowth color=rules
+	
+# Create a municipal boundary map based on the municipal boundary in PERM
+municipalboundary: mnbndBase
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.buffer in=mnbndBase out=municipalboundary dist=1.5 unit=miles
+
+# Fetch the study area boundary 
+boundary: studyAreaBase
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.mapcalc '$@=if(isnull(studyAreaBase) || studyAreaBase ==0,0,1)' > /dev/null 2>&1
+
+# Fetches the landcover file from PERM and masks it with the study area boundary
+landcover: boundary
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.mapcalc "$@=if(boundary && landcoverBase,landcoverBase,null())"
+	(echo 11 110 127 177 ; \
+	echo 21 253 229 228 ; \
+	echo 22 247 178 159 ; \
+	echo 23 229 86 78 ; \
+	echo 31 210 205 192 ; \
+	echo 32 175 175 177 ; \
+	echo 33 83 62 118 ; \
+	echo 41 133 199 126 ; \
+	echo 42 56 129 78 ; \
+	echo 43 212 231 176 ; \
+	echo 51 220 202 143 ; \
+	echo 61 187 174 118 ; \
+	echo 71 253 233 170 ; \
+	echo 81 251 246 93 ; \
+	echo 82 202 145 70 ; \
+	echo 83 121 108 74 ; \
+	echo 84 244 238 202 ; \
+	echo 85 240 156 54 ; \
+	echo 91 200 230 248 ; \
+	echo 92 100 179 213 ; \
+	echo 95 100 179 213 ; \
+	echo end ; ) | \
+	r.colors landcover color=rules
+
+# Fetches the road files
+otherroads: boundary
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.mapcalc $@='if(isnull(boundary),null(),if(otherroadsBase==0,null(),otherroadsBase))' > /dev/null 2>&1
+	r.null $@ null=0
+
+interstates: boundary
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.mapcalc $@='if(isnull(boundary),null(),if(interstatesBase==0,null(),1))' > /dev/null 2>&1
+	r.null $@ null=0
+
+cross: otherroads interstates
+	-g.remove $@,intbuf
+	r.buffer -z input=interstates output=intbuf dist=60
+	r.mapcalc cross='if(intbuf && otherroads==6, 1, 0)'
+
+transport_att: staterd_att ramp_att county_att road_att intersect_att
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.mapcalc "$@=float(${W_STATERD})/(staterd_att+0.1) + \
+	  float(${W_INTERSECT})/(intersect_att+0.1) + \
+	  float(${W_RAMP})/(ramp_att+0.1) + \
+	  float(${W_COUNTY})/(county_att+0.1) + \
+	  float(${W_ROAD})/(road_att+0.1)" > /dev/null 2>&1
+
+transport_res_score: transport_att
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.recode input=transport_att output=$@ rules=${GRAPHS}/TransportAttRes.sfa
+
+transport_com_score: transport_att
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.recode input=transport_att output=$@ rules=${GRAPHS}/TransportAttCom.sfa
+
+# Force state highways to connect to interstates
+#road: otherroads interstates
+#	# Identify state highway cells that border interstates as ramps
+#	r.mapcalc 'road=if(interstates>0,interstates,otherroads)'
+#	r.null road null=0
+
+
+######################################################################
+######################################################################
+# The city attractor map is prepared in stages. The basic approach is
+# as follows:
+# Fetch the small, medium, and large city footprint maps
+# For each (small, medium, and large) 
+#   Create road travel time map at 30 meter resolution 
+#   Create overland travel time map starting from times set above
+#   Merge the two maps
+# Combine the small, medium, and large cumulative maps 
+######################################################################
+######################################################################
+
+../LEAM/awkscript:
+	@mkdir -p ../LEAM
+	@echo 'BEGIN { FS = " "; cat=0;tot=0;developed=0;developable=0;gotone=0 }' > ../LEAM/awkscript
+	@echo '{' >> ../LEAM/awkscript
+	@echo '  if ($$1 != cat)' >> ../LEAM/awkscript
+	@echo '  {' >> ../LEAM/awkscript
+	@echo '    if (cat != 0 && cat != "*")' >> ../LEAM/awkscript
+	@echo '    {' >> ../LEAM/awkscript
+	@echo '      if (developable != 0)' >> ../LEAM/awkscript
+	@echo '      {' >> ../LEAM/awkscript
+	@echo '        if (gotone !=0) printf(", ") ;' >> ../LEAM/awkscript
+	@echo '        printf("%f,%f", cat*MULT/20, developed/developable) ;' >> ../LEAM/awkscript
+	@echo '        gotone += 1 ;' >> ../LEAM/awkscript
+	@echo '      }' >> ../LEAM/awkscript
+	@echo '    }' >> ../LEAM/awkscript
+	@echo '    developed = 0; developable = 0 ; cat = $$1' >> ../LEAM/awkscript
+	@echo '  }' >> ../LEAM/awkscript
+	@echo '  if ($$2 == 2 || $$2 == 1) developable += $$3;' >> ../LEAM/awkscript
+	@echo '  if ($$2 == 2 ) developed = $$3;' >> ../LEAM/awkscript
+	@echo '  tot += $$3;' >> ../LEAM/awkscript
+	@echo '}' >> ../LEAM/awkscript
+	@echo 'END {printf("\n")}' >> ../LEAM/awkscript
+
+
+#cities_att: 
+cities_att: intTravelTime30 othTravelTime30 overlandTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove rast=$@,popcentersBase
+	#g.region res=30
+	v.to.rast input=popcentersBase output=popcentersBase use=cat
+	#r.buffer popcenttersBase out=empX dist=90
+	-python ./bin/cities.py -p total_pop popcentersBase > cities.log 2>&1
+	-g.rename rast=cities_max_norm,$@
+
+emp_att: xLargeEmpCntrsTime largeEmpCntrsTime mediumEmpCntrsTime smallEmpCntrsTime
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.mapcalc "$@=${XLEMP}/(xLargeEmpCntrsTime+0.1) + \
+	              ${LARGEEMP}/(largeEmpCntrsTime+0.1) + \
+	              ${MEDIUMEMP}/(mediumEmpCntrsTime+0.1) + \
+	              ${SMALLEMP}/(smallEmpCntrsTime+0.1)" > /dev/null 2>&1
+	-g.remove $@_t1
+
+emp_res_score: emp_att
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.recode input=emp_att output=$@ rules=${GRAPHS}/EmpAttRes.sfa
+
+emp_com_score: emp_att
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	#g.region res=30
+	r.recode input=emp_att output=$@ rules=${GRAPHS}/EmpAttCom.sfa
+
+roadBuffer: otherroads
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.buffer -z otherroads out=$@ \
+	distance=30,60,90,120,150,180,210,240,270,300,330,360,390,420,450,480,510,540,570,600,630,660,690 
+
+
+smallEmpCntrsTime: smallEmpCntrs overlandTravelTime30 intTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.multicost in=overlandTravelTime30 m2=intTravelTime30 xover=cross \
+          start_rast=smallEmpCntrs out=$@
+
+mediumEmpCntrsTime: mediumEmpCntrs overlandTravelTime30 intTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.multicost in=overlandTravelTime30 m2=intTravelTime30 xover=cross \
+          start_rast=mediumEmpCntrs out=$@
+
+largeEmpCntrsTime: largeEmpCntrs overlandTravelTime30 intTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.multicost in=overlandTravelTime30 m2=intTravelTime30 xover=cross \
+          start_rast=largeEmpCntrs out=$@
+
+xLargeEmpCntrsTime: xLargeEmpCntrs overlandTravelTime30 intTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.multicost in=overlandTravelTime30 m2=intTravelTime30 xover=cross \
+          start_rast=xLargeEmpCntrs out=$@
+
+# Creates a slope map (in degrees) from the dem.  Assumes the dem z values are meters
+slope_att: 
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@_t1,$@
+	#g.region res=30
+	r.slope.aspect demBase slope=$@_t1
+	r.mapcalc 'slope_att=round(slope_att_t1)' > /dev/null 2>&1
+	-g.remove $@_t1
+
+slope_score: slope_att
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@_t1,$@
+	#g.region res=30
+	r.recode input=slope_att output=$@ rules=${GRAPHS}/Slope.sfa
+
+# Create a travel cost surface for travel to ramps
+ramp_att: otherroads overlandTravelTime30 intTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove mask,$@
+	r.mapcalc "mask=if(otherroads==6,1,null())"
+	r.multicost in=overlandTravelTime30 m2=intTravelTime30 xover=cross \
+          start_rast=mask out=$@
+
+
+# Create a travel cost surface for travel to ramps
+staterd_att: otherroads overlandTravelTime30 intTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove mask,$@
+	r.mapcalc "mask=if(otherroads==2,1,null())"
+	r.multicost in=overlandTravelTime30 m2=intTravelTime30 xover=cross \
+          start_rast=mask out=$@
+
+county_att: otherroads overlandTravelTime30 intTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove mask,$@
+	r.mapcalc "mask=if(otherroads==3,1,null())"
+	r.multicost in=overlandTravelTime30 m2=intTravelTime30 xover=cross \
+          start_rast=mask out=$@
+
+road_att: otherroads overlandTravelTime30 intTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove mask,$@
+	r.mapcalc "mask=if(otherroads==4,1,null())"
+	r.multicost in=overlandTravelTime30 m2=intTravelTime30 xover=cross \
+          start_rast=mask out=$@
+
+intersect_att: intersection otherroads overlandTravelTime30 intTravelTime30 cross
+	@echo '#########################'; echo $@ ; date 
+	-g.remove mask,$@
+	r.multicost in=overlandTravelTime30 m2=intTravelTime30 xover=cross \
+          start_rast=intersection out=$@
+
+
+# Finds state (2) and county  (3) road  intersections.  Create a map of
+# just state and county roads. Expand these locations by one cell and
+# then thin them down to one cell (to take care of any small map errors).
+# Then find cells that are surrounded by more than two cells containing
+# roads.
+intersection: otherroads
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@_t1,$@_t2,$@
+	#g.region res=30
+	r.mapcalc '$@_t1=if((otherroads==2) || (otherroads==3), 1, 0)' > /dev/null 2>&1
+	r.thin $@_t1 output=$@_t2
+	r.null $@_t2 null=0
+	r.mapcalc 'intersection=if($@_t2==1,if(2< \
+	  ($@_t2[-1,-1] + $@_t2[-1,0] + $@_t2[-1,1] + \
+	   $@_t2[ 0,-1]             + $@_t2[ 0,1] + \
+	   $@_t2[ 1,-1] + $@_t2[ 1,0] + $@_t2[ 1,1]),1,0))' > /dev/null 2>&1
+	r.null intersection setnull=0
+	-g.remove $@_t1,$@_t2
+
+# Create the municipal buffer file for LEAM
+cityBuff: municipalboundary boundary
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@_t1,$@
+	#g.region res=30
+	r.mapcalc 'cityBuff=if(isnull(boundary),1,if(isnull(municipalboundary),0,1))' > /dev/null 2>&1
+
+# Create a surface with an index of a cell's juxtaposition with 
+# residential neighbors
+neighbor_att: landcover
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@_t1,$@
+	( \
+	echo TITLE     Find dense residential areas ;\
+	echo MATRIX    29 ;\
+	echo  0  0  0  0  0  0  0  0  0  0  0  1  1  1  1  1  1  1  0  0  0  0  0  0  0  0  0  0  0 ;\
+	echo  0  0  0  0  0  0  0  0  1  1  1  2  2  2  2  2  2  2  1  1  1  0  0  0  0  0  0  0  0 ;\
+	echo  0  0  0  0  0  0  1  1  2  2  2  3  3  3  3  3  3  3  2  2  2  1  1  0  0  0  0  0  0 ;\
+	echo  0  0  0  0  0  1  1  2  2  3  3  4  4  4  4  4  4  4  3  3  2  2  1  1  0  0  0  0  0 ;\
+	echo  0  0  0  0  1  2  2  3  3  4  4  5  5  5  5  5  5  5  4  4  3  3  2  2  1  0  0  0  0 ;\
+	echo  0  0  0  1  2  2  3  4  4  5  5  6  6  6  6  6  6  6  5  5  4  4  3  2  2  1  0  0  0 ;\
+	echo  0  0  1  1  2  3  4  4  5  6  6  6  7  7  7  7  7  6  6  6  5  4  4  3  2  1  1  0  0 ;\
+	echo  0  0  1  2  3  4  4  5  6  6  7  7  8  8  8  8  8  7  7  6  6  5  4  4  3  2  1  0  0 ;\
+	echo  0  1  2  2  3  4  5  6  7  7  8  8  9  9  9  9  9  8  8  7  7  6  5  4  3  2  2  1  0 ;\
+	echo  0  1  2  3  4  5  6  6  7  8  9  9 10 10 10 10 10  9  9  8  7  6  6  5  4  3  2  1  0 ;\
+	echo  0  1  2  3  4  5  6  7  8  9  9 10 11 11 11 11 11 10  9  9  8  7  6  5  4  3  2  1  0 ;\
+	echo  1  2  3  4  5  6  6  7  8  9 10 11 11 12 12 12 11 11 10  9  8  7  6  6  5  4  3  2  1 ;\
+	echo  1  2  3  4  5  6  7  8  9 10 11 11 12 13 13 13 12 11 11 10  9  8  7  6  5  4  3  2  1 ;\
+	echo  1  2  3  4  5  6  7  8  9 10 11 12 13 14 14 14 13 12 11 10  9  8  7  6  5  4  3  2  1 ;\
+	echo  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1 ;\
+	echo  1  2  3  4  5  6  7  8  9 10 11 12 13 14 14 14 13 12 11 10  9  8  7  6  5  4  3  2  1 ;\
+	echo  1  2  3  4  5  6  7  8  9 10 11 11 12 13 13 13 12 11 11 10  9  8  7  6  5  4  3  2  1 ;\
+	echo  1  2  3  4  5  6  6  7  8  9 10 11 11 12 12 12 11 11 10  9  8  7  6  6  5  4  3  2  1 ;\
+	echo  0  1  2  3  4  5  6  7  8  9  9 10 11 11 11 11 11 10  9  9  8  7  6  5  4  3  2  1  0 ;\
+	echo  0  1  2  3  4  5  6  6  7  8  9  9 10 10 10 10 10  9  9  8  7  6  6  5  4  3  2  1  0 ;\
+	echo  0  1  2  2  3  4  5  6  7  7  8  8  9  9  9  9  9  8  8  7  7  6  5  4  3  2  2  1  0 ;\
+	echo  0  0  1  2  3  4  4  5  6  6  7  7  8  8  8  8  8  7  7  6  6  5  4  4  3  2  1  0  0 ;\
+	echo  0  0  1  1  2  3  4  4  5  6  6  6  7  7  7  7  7  6  6  6  5  4  4  3  2  1  1  0  0 ;\
+	echo  0  0  0  1  2  2  3  4  4  5  5  6  6  6  6  6  6  6  5  5  4  4  3  2  2  1  0  0  0 ;\
+	echo  0  0  0  0  1  2  2  3  3  4  4  5  5  5  5  5  5  5  4  4  3  3  2  2  1  0  0  0  0 ;\
+	echo  0  0  0  0  0  1  1  2  2  3  3  4  4  4  4  4  4  4  3  3  2  2  1  1  0  0  0  0  0 ;\
+	echo  0  0  0  0  0  0  1  1  2  2  2  3  3  3  3  3  3  3  2  2  2  1  1  0  0  0  0  0  0 ;\
+	echo  0  0  0  0  0  0  0  0  1  1  1  2  2  2  2  2  2  2  1  1  1  0  0  0  0  0  0  0  0 ;\
+	echo  0  0  0  0  0  0  0  0  0  0  0  1  1  1  1  1  1  1  0  0  0  0  0  0  0  0  0  0  0 ;\
+	echo DIVISOR   1 ;\
+	echo TYPE      P ;\
+	) > /tmp/filter$$
+
+	#g.region res=30
+	# select urban residential areas
+	r.mapcalc  $@_t1='if(landcover==21,1,if(landcover==22,2,0))'
+	r.mfilter input=$@_t1 output=neighbor_att filter=/tmp/filter$$
+	-g.remove $@_t1
+	rm /tmp/filter$$
+
+# Create a distance surface to the nearest cell containing water.
+water_att: landcover
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@_t1,$@_t2,$@
+	#g.region res=30
+	r.mapcalc $@_t1='if(landcover==11)' > /dev/null 2>&1
+	r.buffer -z $@_t1 output=$@_t2 distances=30,60,90,120,150,180,210,240,270,300,330,360
+	r.mapcalc water_att='if(isnull($@_t2),390,($@_t2-1)*30)' > /dev/null 2>&1
+	-g.remove $@_t1,$@_t2
+
+water_score: water_att
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.recode input=water_att output=$@ rules=${GRAPHS}/WaterAttMeters.sfa
+
+# Create a distance surface to the nearest cell containing forest -
+forest_att: landcover
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@_t1,$@_t2,$@
+	#g.region res=30
+	r.mapcalc $@_t1='if(landcover==41 || landcover==42 || \
+	landcover==43 || landcover==91)' > /dev/null 2>&1
+	r.buffer -z $@_t1 output=$@_t2 distances=30,60,90,120,150,180,210,240,270,300,330,360
+	r.mapcalc forest_att='if(isnull($@_t2),390,($@_t2-1)*30)' > /dev/null 2>&1
+	-g.remove $@_t1,$@_t2
+
+forest_score: forest_att
+	@echo '#########################'; echo $@ ; date 
+	-g.remove $@
+	r.recode input=forest_att output=$@ rules=${GRAPHS}/ForestAttMeters.sfa
+
+
+othTravelTime30: othTravelSpeed30
+	@echo '#########################'; echo $@ ; date 
+	#g.region res=30
+	# 30m/cell * 1mile/1609meter * 60min/hr = 1.11846min.mile/cell.hr
+	# 1.11846min.mile/cell.hr / x miles/hr = Y min/cell
+	r.mapcalc 'othTravelTime30=if(othTravelSpeed30>0,1.11846/othTravelSpeed30, null())' > /dev/null 2>&1
+
+intTravelTime30: intTravelSpeed30
+	@echo '#########################'; echo $@ ; date 
+	#g.region res=30
+	# 30m/cell * 1mile/1609meter * 60min/hr = 1.11846min.mile/cell.hr
+	# 1.11846min.mile/cell.hr / x miles/hr = Y min/cell
+	r.mapcalc 'intTravelTime30=if(intTravelSpeed30>0,1.11846/intTravelSpeed30, null())' > /dev/null 2>&1
+
+overlandTravelSpeed30: landTravelSpeed30 othTravelSpeed30 interstates
+	@echo '#########################'; echo $@ ; date 
+	#g.region res=30
+	r.mapcalc $@='if(othTravelSpeed30, othTravelSpeed30,if(interstates,0,landTravelSpeed30))' > /dev/null 2>&1
+
+overlandTravelTime30: overlandTravelSpeed30
+	@echo '#########################'; echo $@ ; date 
+	#g.region res=30
+	# 30m/cell * 1mile/1609meter * 60min/hr = 1.11846min.mile/cell.hr
+	# 1.11846min.mile/cell.hr / x miles/hr = Y min/cell
+	r.mapcalc $@='if(overlandTravelSpeed30>0,1.11846/overlandTravelSpeed30, null())' > /dev/null 2>&1
+
+intTravelSpeed30:
+	@echo '#########################'; echo $@ ; date 
+	#g.region res=30
+	-g.remove $@
+	g.copy rast=interstatesSpeedBase,$@
+	r.null $@ null=0
+
+othTravelSpeed30:
+	@echo '#########################'; echo $@ ; date 
+	#g.region res=30
+	-g.remove $@
+	g.copy rast=otherroadsSpeedBase,$@
+	r.null $@ null=0
+
+# original calculation depended on noGrowth at zero speed
+# this caused nogrowth areas to have zero probabilities
+# which limited usefulness of the probability maps
+landTravelSpeed30: landcover
+	@echo '#########################'; echo $@ ; date 
+	#g.region res=30
+	-g.remove $@
+	r.recode input=landcover output=$@ rules=${GRAPHS}/lu_speeds.recode
+
+
+# Removes all the temporary files used in the creation of the LEAM inputs
+clean:
+	-g.remove rast=${Otherfiles}
+
+# Removes all the temporary and LEAM input files
+veryclean: clean
+	-g.remove rast=${LEfiles}
+	-g.remove rast=${Indexfiles}

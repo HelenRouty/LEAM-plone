@@ -1,0 +1,39 @@
+#!/bin/bash
+
+g.region -p > /dev/null
+if [[ $? != 0 ]]; then
+  echo "Error: not running under GRASS environment"
+  exit 1
+fi
+
+r.mapcalc special_res=1.0
+r.mapcalc special_com=1.0
+echo "initial special_res and special_com maps created"
+
+for arg
+do
+  loc=tmp$$
+  echo "processing $arg to location $loc"
+  v.in.ogr  --overwrite snap=10 min_area=300 dsn=$arg output=special location=$loc
+  layer=${arg/.shp/}
+  res=${layer}_res
+  com=${layer}_com
+  v.proj --overwrite input=special mapset=PERMANENT location=$loc output=$layer
+
+  echo "removing import location"
+  rm -rf ${GISDBASE}/$loc
+
+  v.to.rast --overwrite input=$layer output=$res column=WRES
+  if [[ $? == 0 ]]; then
+    r.null $res null=1.0
+    r.mapcalc special_res="if($res > 0, special_res*$res, special_res)"
+  fi
+
+  v.to.rast --overwrite input=$layer output=$com column=WCOM
+  if [[ $? == 0 ]]; then
+    r.null $com null=1.0
+    r.mapcalc special_com="if($com > 0, special_com*$com, special_com)"
+  fi
+done
+
+echo "special drivers done"

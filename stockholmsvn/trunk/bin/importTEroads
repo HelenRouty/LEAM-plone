@@ -1,0 +1,55 @@
+#!/bin/bash
+
+g.region -p > /dev/null
+if [[ $? != 0 ]]; then
+  echo "Error: not running under GRASS environment"
+  exit 1
+fi
+
+if [ x$1 = x ]; then
+  echo "Error: road map layer must be specified"
+  echo "Usage $0 roadmap"
+  exit 1
+fi
+
+echo "STARTED: importTEroads $1"
+
+# import the TE road network
+if [ ! -e ${1/shp/prj} ]; then
+  cp trans_network.prj ${1/shp/prj}
+fi
+
+v.in.ogr --overwrite dsn=$1 output=TE location=tmp$$
+v.proj --overwrite input=TE mapset=PERMANENT location=tmp$$ output=TE
+rm -rf ${GISDBASE}/tmp$$
+
+
+# create interstates mask and speeds
+g.remove vect=interstates rast=interstatesBase,interstatesSpeedBase
+v.extract --o TE out=interstates where="FCLASS=1 OR FCLASS=2 OR FCLASS=13"
+v.to.rast interstates out=interstatesBase use=val value=1
+v.to.rast interstates out=interstatesSpeedBase use=attr col="MINSPEED"
+
+# create otherroads mask and speeds
+#  -- reclassifcation required to convert from TE to LEAM standard
+#  -- merge other roads layers
+#  -- create mask layer
+#  -- create speed layer
+g.remove vect=tmp
+v.extract --o TE out=tmp where="FCLASS<>1 AND FCLASS<>2 AND FCLASS<>13"
+v.db.update tmp column=FCLASS value=2 where="FCLASS=3 OR FCLASS=4 OR FCLASS=12 OR FCLASS=14"
+v.db.update tmp column=FCLASS value=3 where="FCLASS=5 OR FCLASS=6 OR FCLASS=7 OR FCLASS=9"
+v.db.update tmp column=FCLASS value=6 where="FCLASS=8"
+db.copy select="select cat,MINSPEED,FCLASS from tmp" to_table="tmp_mod"
+v.db.connect -o map=tmp table=tmp_mod
+v.db.connect map=tmp table=tmp layer=2
+
+g.remove vect=otherroads
+v.db.dropcol extra_roads column=cat_
+v.patch --o -e input=tmp,extra_roads output=otherroads
+#g.remove vect=tmp
+
+g.remove rast=otherroadBase,otherroadsSpeedBase
+v.to.rast input=otherroads output=otherroadsBase use=attr col="FCLASS"
+v.to.rast input=otherroads out=otherroadsSpeedBase use=attr col="MINSPEED"
+

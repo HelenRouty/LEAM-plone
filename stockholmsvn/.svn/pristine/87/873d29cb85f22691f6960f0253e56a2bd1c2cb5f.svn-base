@@ -1,0 +1,32 @@
+#!/bin/bash
+
+g.region -p > /dev/null
+if [[ $? != 0 ]]; then
+  echo "Error: not running under GRASS environment."
+  exit 1
+fi
+
+if [ x$1 = x ]; then
+  echo "Usage: $0 shapefile density column"
+  echo "Shapefile contain polygons defining active area."
+  exit 1
+fi
+
+echo "STARTED: importDensityMap $1"
+
+loc=tmp$$
+echo "importing $1 to location $loc"
+v.in.ogr --overwrite dsn=$1 output=density location=$loc layer=${1/.shp/}
+g.remove vect=$2
+v.proj input=density mapset=PERMANENT location=$loc output=$2
+rm -rf ${GISDBASE}/$loc
+
+echo "converting $1 to raster"
+v.to.rast --overwrite input=$2 output=$2 column=$3
+if [[ $? != 0 ]]; then
+  echo "Error: converting active area layer ($1) to raster."
+  exit 1
+fi
+r.mapcalc "$2=if(isnull($2),regional_$2,$2)"
+
+echo "importActiveArea completed"

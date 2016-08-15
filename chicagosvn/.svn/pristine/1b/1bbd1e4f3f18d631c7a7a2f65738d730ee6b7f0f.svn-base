@@ -1,0 +1,52 @@
+MAP
+  NAME "RasterMap"
+  SIZE 600 400
+  EXTENT -88.707293 40.994755 -87.524163 42.496202
+  UNITS  dd
+  IMAGETYPE png
+  PROJECTION
+  "init=epsg:4326"
+  END
+
+
+  WEB
+    METADATA
+      wms_enable_request "*"
+    END
+  END
+
+  LAYER
+    NAME "final4"
+    TYPE RASTER
+    STATUS DEFAULT
+    DATA %3
+
+    CLASS
+      NAME "Year 2010-2019"
+      EXPRESSION ([pixel] >= 2010 and [pixel] < 2020)
+      STYLE
+        COLOR 0 0 255
+      END
+    END
+
+    CLASS
+      NAME "Year 2020-2029"
+      EXPRESSION ([pixel] >= 2020 and [pixel] < 2029)
+      STYLE
+        COLOR 92 92 255
+      END
+    END
+
+    CLASS
+      NAME "Year 2030-2040"
+      EXPRESSION ([pixel] >= 2030)
+      STYLE
+        COLOR 140 140 255
+      END
+    END
+
+    PROJECTION
+      "init=epsg:26916"
+    END
+  END
+END 

@@ -1,0 +1,58 @@
+ MAP
+      NAME "VectorMap"
+        SIZE 600 400
+	EXTENT -88.707293 40.994755 -87.524163 42.496202 
+	UNITS  dd
+	IMAGETYPE png
+	PROJECTION
+	"init=epsg:4326"
+	END
+
+	LAYER
+		NAME "final4"
+		TYPE POLYGON
+		STATUS DEFAULT 
+		DATA %3
+
+                CLASS
+        	 NAME "Pop > 1500"
+		 EXPRESSION ([POP2040] > 1500)
+                 COLOR 0 250 0 
+                 # OUTLINECOLOR 40 0 0
+        	END 
+                CLASS
+        	 NAME "Pop 750 - 1500" 
+		 EXPRESSION ([POP2040] > 750 && [POP2040] <= 1500)
+                 COLOR 80 192 0
+                 # OUTLINECOLOR 40 0 0
+        	END 
+                CLASS
+        	 NAME "Pop 250 - 750"
+		 EXPRESSION ([POP2040] > 250 && [POP2040] <= 750)
+                 COLOR 128 168 0
+                 # OUTLINECOLOR 40 0 0
+        	END 
+                CLASS
+        	 NAME "Pop -750 - -250" 
+		 EXPRESSION ([POP2040] > -750 && [POP2040] <= -250)
+                 # OUTLINECOLOR 168 128 0
+        	END 
+                CLASS
+        	 NAME "Pop -1500 - -750"
+		 EXPRESSION ([POP2040] > -1500 && [POP2040] <= -750)
+                 COLOR 192 80 0
+                 # OUTLINECOLOR 40 0 0
+        	END 
+                CLASS
+        	 NAME "Pop < -1500"
+		 EXPRESSION ([POP2040] > -3000 && [POP2040] <= -1500)
+                 COLOR 255 0 0
+                 # OUTLINECOLOR 40 0 0
+        	END 
+
+		PROJECTION
+	 	 "init=epsg:26916"
+		END
+	END
+ END
+	
